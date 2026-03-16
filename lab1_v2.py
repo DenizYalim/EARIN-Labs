@@ -1,4 +1,13 @@
-def greedy(maze, start, finish):
+import logging
+
+""" EDGE CASES
+* finish line might not be accesible from start
+* start might be enclosed by walls at every direction
+
+"""
+
+
+def greedy(maze: list[list], start: tuple, finish: tuple):
     """
     Greedy best-first search
 
@@ -10,11 +19,12 @@ def greedy(maze, start, finish):
     Returns:
     - Number of steps from start to finish, equals -1 if the path is not found
     - Viz - everything required for step-by-step vizualization
-    
-    """
-    # Write your code here
 
-def vizualize(viz):
+    """
+    pass
+
+
+def vizualize(viz: list[tuple]):
     """
     Vizualization function. Shows step by step the work of the search algorithm
 
@@ -22,15 +32,19 @@ def vizualize(viz):
     - viz: everything required for step-by-step vizualization
     """
 
+    """
+    for list in maze:
+        for tile in list:
+            if tile == 0:
+                print("_", end="")
+            else:
+                print("#", end="")
+        print()
+        """
+
 
 # Example usage:
-maze = [
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 1, 0],
-    [0, 0, 0, 1, 0],
-    [1, 0, 1, 0, 0],
-    [0, 0, 0, 1, 0]
-]
+maze = [[0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 0, 0, 1, 0], [1, 0, 1, 0, 0], [0, 0, 0, 1, 0]]
 
 start_position = (0, 0)
 finish_position = (4, 4)
