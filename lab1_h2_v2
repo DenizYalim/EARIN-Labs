@@ -1,0 +1,96 @@
+import math
+
+def h1_manhattan(start: tuple, end: tuple) -> int:
+    """ Manhattan Distance: |x1 - x2| + |y1 - y2| """
+    return abs(start[0] - end[0]) + abs(start[1] - end[1])
+
+def list_best_directions_based_on_heuristic(start: tuple, end: tuple) -> list[tuple]:
+    directions = [(1, 0), (0, -1), (-1, 0), (0, 1)]
+    scored_directions = []
+
+    for d in directions:
+        new_pos = (start[0] + d[0], start[1] + d[1])
+        score = h1_manhattan(new_pos, end)
+        scored_directions.append((score, d))
+
+    scored_directions.sort(key=lambda x: x[0])
+    return [direction for score, direction in scored_directions]
+
+def greedy(maze: list[list], start: tuple, finish: tuple):
+    cur_pos = start
+    viz = []
+    viz.append(start)
+    
+    position_stack = [start]
+    visited_cells = {start}
+
+    while cur_pos != finish:
+        prioritized_directions = list_best_directions_based_on_heuristic(cur_pos, finish)
+
+        move_legal = False
+        for direction in prioritized_directions:
+            next_step = (cur_pos[0] + direction[0], cur_pos[1] + direction[1])
+            
+            # Boundary checks
+            if 0 <= next_step[0] < len(maze) and 0 <= next_step[1] < len(maze[0]):
+                # Wall check (1 = wall) and Visited check
+                if maze[next_step[0]][next_step[1]] == 0 and next_step not in visited_cells:
+                    cur_pos = next_step
+                    visited_cells.add(cur_pos)
+                    viz.append(cur_pos)
+                    position_stack.append(cur_pos)
+                    move_legal = True
+                    break
+
+        if not move_legal:
+            position_stack.pop()
+            if not position_stack:
+                return -1, {"history": viz, "maze": maze, "start": start, "finish": finish, "path": []}
+            cur_pos = position_stack[-1]
+
+    viz_data = {
+        "history": viz, 
+        "maze": maze, 
+        "start": start, 
+        "finish": finish,
+        "path": position_stack
+    }
+    return len(position_stack) - 1, viz_data
+
+def vizualize(viz):
+    """
+    Shows step-by-step the work of the search algorithm 
+    """
+    maze = viz["maze"]
+    history = viz["history"]
+    
+    print("\n--- Step-by-Step Visualization ---")
+    for i, current_pos in enumerate(history):
+        print(f"Step {i}: Visiting {current_pos}")
+        current_explored = set(history[:i+1])
+        
+        for r in range(len(maze)):
+            row_str = ""
+            for c in range(len(maze[0])):
+                pos = (r, c)
+                if pos == viz["start"]: row_str += " S "
+                elif pos == viz["finish"]: row_str += " G "
+                elif maze[r][c] == 1: row_str += " # "
+                elif pos == current_pos: row_str += " @ "
+                elif pos in current_explored: row_str += " . "
+                else: row_str += " - "
+            print(row_str)
+        print("-" * (len(maze[0]) * 3))
+
+maze = [[0, 1, 0, 0, 0], [0, 1, 0, 1, 0], [0, 0, 0, 1, 0], [1, 0, 1, 0, 0], [0, 0, 0, 1, 0]]
+start_position = (0, 0)
+finish_position = (4, 4)
+
+num_steps, viz_output = greedy(maze, start_position, finish_position)
+
+if num_steps != -1:
+    print(f"Path from {start_position} to {finish_position} is {num_steps} steps.")
+else:
+    print(f"No path found.")
+
+vizualize(viz_output)
