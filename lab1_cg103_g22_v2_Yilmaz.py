@@ -43,7 +43,7 @@ def greedy(maze: list[list], start: tuple, finish: tuple):
             cur_pos = (cur_pos[0] + direction_to_move[0], cur_pos[1] + direction_to_move[1])
             position_stack.append(cur_pos)
             viz.append(cur_pos)
-            print(f"MOVED TO {cur_pos}")
+            # print(f"MOVED TO {cur_pos}")
 
         else:
             if len(position_stack) == 0:
