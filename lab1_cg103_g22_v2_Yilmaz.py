@@ -106,8 +106,8 @@ finish_position = (4, 4)
 
 print("Running first implementation (greedy):")
 num_steps, viz = greedy(maze, start_position, finish_position)
+vizualize(viz, maze, finish_position)
 if num_steps != -1:
-    print(f"Path from {start_position} to {finish_position} is {num_steps} steps.")
+    print(f"\n\nPath from {start_position} to {finish_position} takes {num_steps} steps.")
 else:
     print(f"No path from {start_position} to {finish_position} exists.")
-vizualize(viz, maze, finish_position)
