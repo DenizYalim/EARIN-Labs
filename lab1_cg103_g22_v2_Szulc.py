@@ -12,11 +12,11 @@ def solve_maze_greedy(maze, start, end):
     path = [start]
     visited = [start]
     
-    print("--- STARTING SEARCH ---")
+    print("STARTING SEARCH")
     
     while curr != end:
         # 1. SHOW THE STEPS (Visualization)
-        # We manually print the grid every time we move
+        # manually print the grid every time it move
         for r in range(len(maze)):
             row_str = ""
             for c in range(len(maze[0])):
