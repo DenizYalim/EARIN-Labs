@@ -1,0 +1,86 @@
+import math
+
+def get_distance(p1, p2):
+    x1 = p1[0]
+    y1 = p1[1]
+    x2 = p2[0]
+    y2 = p2[1]
+    return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
+def solve_maze_greedy(maze, start, end):
+    curr = start
+    path = [start]
+    visited = [start]
+    
+    print("STARTING SEARCH")
+    
+    while curr != end:
+        # 1. SHOW THE STEPS (Visualization)
+        # manually print the grid every time it move
+        for r in range(len(maze)):
+            row_str = ""
+            for c in range(len(maze[0])):
+                if (r, c) == curr:
+                    row_str += " @ "
+                elif (r, c) == start:
+                    row_str += " S "
+                elif (r, c) == end:
+                    row_str += " G "
+                elif maze[r][c] == 1:
+                    row_str += " # "
+                elif (r, c) in visited:
+                    row_str += " . "
+                else:
+                    row_str += " - "
+            print(row_str)
+        print("-" * 15)
+
+        x = curr[0]
+        y = curr[1]
+        neighbors = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+        
+        best_node = None
+        best_dist = 1000000 
+        
+        for n in neighbors:
+            nx = n[0]
+            ny = n[1]
+            
+            if 0 <= nx < len(maze) and 0 <= ny < len(maze[0]):
+
+                if maze[nx][ny] == 0 and n not in visited:
+                    d = get_distance(n, end)
+                    if d < best_dist:
+                        best_dist = d
+                        best_node = n
+        
+
+        if best_node is not None:
+            curr = best_node
+            visited.append(curr)
+            path.append(curr)
+            print(f"Moving to: {curr}")
+        else:
+            if len(path) > 1:
+                print("Stuck! Backtracking...")
+                path.pop()
+                curr = path[-1]
+            else:
+                print("No path possible!")
+                return -1
+                
+    print("GOAL REACHED!")
+    return len(path) - 1
+
+
+
+my_maze = [
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [1, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0]
+]
+
+steps = solve_maze_greedy(my_maze, (0, 0), (4, 4))
+print("Final Score (Steps):", steps)
