@@ -12,7 +12,6 @@ MINMAX_DEPTH = 4
 class ConnectFour:
     """
     Class for game Connect 4
-
     """
 
     def __init__(self):
@@ -26,7 +25,7 @@ class ConnectFour:
             return
 
         if not self._place_piece(board=self.board, column=column, piece=self.current_player)[0]:
-            return  # invalid move, piece not placed
+            return
 
         someone_won = self._winning_move(self.board, self.current_player)
         is_draw = self._check_draw(board=self.board)
@@ -37,52 +36,45 @@ class ConnectFour:
             return
         elif is_draw:
             print("It's a draw!")
-            self.game_over = True  # end the game on draw as well
+            self.game_over = True
             return
 
         self.current_player = self.__get_reverse_of_piece(self.current_player)
 
-    def _place_piece(self, board, column, piece) -> tuple:  # tuple of (success, piece)
-        column = int(column)  # typecast str to int, it will crash if given string
+    def _place_piece(self, board, column, piece) -> tuple:
+        column = int(column)
 
         if column < 0 or column >= COLS:
             print(f"Invalid column. Please enter a number between 0 and {COLS - 1}.")
             return False, None
 
-        # piece = self.current_player
-
         current_row = ROWS - 1
         while current_row >= 0:
             if board[current_row][column] == EMPTY:
                 board[current_row][column] = piece
-
                 return True, piece
             current_row -= 1
 
-        if board == self.board:  # don't print if its a simulation
+        if board == self.board:
             print("Column is full, try a different column.")
         return False, None
 
     def _winning_move(self, board, piece):
-        # horizontal check
         for row in range(ROWS):
             for col in range(COLS - 3):
                 if board[row][col] == piece and board[row][col + 1] == piece and board[row][col + 2] == piece and board[row][col + 3] == piece:
                     return True
 
-        # vertical check
         for row in range(ROWS - 3):
             for col in range(COLS):
                 if board[row][col] == piece and board[row + 1][col] == piece and board[row + 2][col] == piece and board[row + 3][col] == piece:
                     return True
 
-        # diagonal down-right check
         for row in range(ROWS - 3):
             for col in range(COLS - 3):
                 if board[row][col] == piece and board[row + 1][col + 1] == piece and board[row + 2][col + 2] == piece and board[row + 3][col + 3] == piece:
                     return True
 
-        # diagonal up-right check
         for row in range(3, ROWS):
             for col in range(COLS - 3):
                 if board[row][col] == piece and board[row - 1][col + 1] == piece and board[row - 2][col + 2] == piece and board[row - 3][col + 3] == piece:
@@ -90,14 +82,10 @@ class ConnectFour:
 
         return False
 
-    def _check_draw(self, board):  # if all top cells are filled and no winner, then it's a draw
-        if self.game_over:
-            return False
-
-        for spot in board[0]:  # check top row
+    def _check_draw(self, board):
+        for spot in board[0]:
             if spot == EMPTY:
                 return False
-
         return True
 
     def _copy_board(self, board=None):
@@ -111,126 +99,138 @@ class ConnectFour:
         print("-" * (COLS * 2 - 1))
         print(" ".join(str(i) for i in range(COLS)))
 
-    # Implement any additional functions needed here
-
-    """def evaluate_window(self, window, piece):
-        
-        Evaluation of given window. Helper function to evaluate the separate parts of the board called windows
-
-        Parameters:
-        - window: list containing values of evaluated window
-        - piece: PLAYER_X or PLAYER_O depending on which player's position we evaluate
-
-        Returns:
-        - score of the window
-
-        """
-
     def evaluate_position(self, board: list[list[str]], piece):
-        """
-        Evaluation of position
-        Parameters:
-        - board: 2d matrix representing evaluated state of the board
-        - piece: PLAYER_X or PLAYER_O depending on which player's position we evaluate
+        opponent = self.__get_reverse_of_piece(piece)
 
-        Returns:
-        - score of the position
-
-        """
-        # default states = already_won, already_tied, already_lost
         if self._winning_move(board, piece):
             return 1337
-        if self._winning_move(board, self.__get_reverse_of_piece(piece)):
+        if self._winning_move(board, opponent):
             return -1337
 
-        # pieces on the middle should be more valuable,
         positional_score = 0
-        for row, list in enumerate(board):
-            for col, cell in enumerate(list):
-                piece_value = COLS // 2 - abs(COLS // 2 - col) + ROWS // 2 - abs(ROWS // 2 - row)  # pieces in the middle are more valuable
-                if cell == piece:  # our piece
+        for row, board_row in enumerate(board):
+            for col, cell in enumerate(board_row):
+                piece_value = COLS // 2 - abs(COLS // 2 - col) + ROWS // 2 - abs(ROWS // 2 - row)
+
+                if cell == piece:
                     positional_score += piece_value
-                elif cell == self.__get_reverse_of_piece(piece):  # opponent piece
+                elif cell == opponent:
                     positional_score -= piece_value
-                else:
-                    pass  # empty cell
 
         return positional_score
 
     def __get_reverse_of_piece(self, piece) -> str:
         if piece == PLAYER_O:
             return PLAYER_X
-
         if piece == PLAYER_X:
             return PLAYER_O
-
         raise ValueError(f"Invalid piece {piece} given, expected {PLAYER_X} or {PLAYER_O}")
 
     def get_move_from_minmax(self, piece, og_board=None, depth=MINMAX_DEPTH) -> tuple:
         if og_board is None:
             og_board = self.board
 
+        best_col, best_score = self.minimax(
+            board=og_board,
+            depth=depth,
+            maximizing_player=True,
+            alpha=float("-inf"),
+            beta=float("inf"),
+            ai_piece=piece,
+        )
+
+        return best_col, best_score
+
+    def minimax(self, board, depth, maximizing_player, alpha, beta, ai_piece) -> tuple:
+        opponent_piece = self.__get_reverse_of_piece(ai_piece)
+
         if depth == 0:
-            return (-1, self.evaluate_position(og_board, piece))
+            return None, self.evaluate_position(board, ai_piece)
 
-        move_list = []
+        valid_columns = [col for col in range(COLS) if board[0][col] == EMPTY]
 
-        for col in range(COLS):
-            temp_board = self._copy_board(og_board)
-            success, _ = self._place_piece(board=temp_board, column=col, piece=piece)
+        if maximizing_player:
+            best_score = float("-inf")
+            best_col = valid_columns[0] if valid_columns else None
 
-            if not success:
-                continue
+            for col in valid_columns:
+                temp_board = self._copy_board(board)
+                success, _ = self._place_piece(board=temp_board, column=col, piece=ai_piece)
 
-            _, score = self.get_move_from_minmax(piece=self.__get_reverse_of_piece(piece), og_board=temp_board, depth=depth - 1)
+                if not success:
+                    continue
 
-            move_list.append((col, score))
+                _, score = self.minimax(
+                    board=temp_board,
+                    depth=depth - 1,
+                    maximizing_player=False,
+                    alpha=alpha,
+                    beta=beta,
+                    ai_piece=ai_piece,
+                )
 
-        if not move_list:
-            return (-1, self.evaluate_position(og_board, piece))
+                if score > best_score:
+                    best_score = score
+                    best_col = col
 
-        move_list.sort(key=lambda x: x[1], reverse=True)
-        return move_list[0]
+            return best_col, best_score
 
-    def minimax(self, board, depth, maximizing_player, alpha, beta) -> tuple:  # value, column of best move
-        """
-        Minimax with alpha-beta pruning algorithm
+        else:
+            best_score = float("inf")
+            best_col = valid_columns[0] if valid_columns else None
 
-        Parameters:
-        - board: 2d matrix representing the state, each cell contains either ' ' (empty cell), 'X' (player1), or 'O' (player2)
-        - depth: depth
-        - maximizing_player: boolean which is equal to True when the player tries to maximize the score
-        - alpha: alpha variable for pruning
-        - beta: beta variable for pruning
+            for col in valid_columns:
+                temp_board = self._copy_board(board)
+                success, _ = self._place_piece(board=temp_board, column=col, piece=opponent_piece)
 
-        Returns:
-        - Best value
-        - Best move found
+                if not success:
+                    continue
 
-        """
+                _, score = self.minimax(
+                    board=temp_board,
+                    depth=depth - 1,
+                    maximizing_player=True,
+                    alpha=alpha,
+                    beta=beta,
+                    ai_piece=ai_piece,
+                )
 
-        # Your code starts here
+                if score < best_score:
+                    best_score = score
+                    best_col = col
+
+            return best_col, best_score
 
 
 def main():
-    """
-    Main game loop implementation. Player1 should play first with 'X', player2 plays second with 'O'
-    """
     game = ConnectFour()
 
     player_preferences = input("Do you want to play as 'X' (goes first) or 'O' (goes second)? Enter X or O: ").strip().upper()
     while player_preferences not in [PLAYER_X, PLAYER_O]:
-        print("Invalid input. Defaulting to 'X'.")
+        print("Invalid input.")
         player_preferences = input("Do you want to play as 'X' (goes first) or 'O' (goes second)? Enter X or O: ").strip().upper()
 
     while True:
-        game.print_board()
-        minmax_eval = game.get_move_from_minmax(piece=game.current_player)
-        print(f"output: {minmax_eval}")
-        column_inputted = input(f"where to place piece? (0-{COLS - 1}); optimal minmax move to play: {minmax_eval[0]} with score: {minmax_eval[1]}  \n")
-        if not column_inputted.isdigit() or int(column_inputted) < 0 or int(column_inputted) >= COLS:
-            print("\nInvalid input. Please enter a valid column number.")
-            continue
+        if game.game_over:
+            game.print_board()
+            break
+
+        if game.current_player == player_preferences:
+            game.print_board()
+
+            minmax_eval = game.get_move_from_minmax(piece=game.current_player)
+
+            column_inputted = input(f"where to place piece? (0-{COLS - 1}) ; optimal minmax move to play: {minmax_eval[0]} with score: {minmax_eval[1]}\n")
+            if not column_inputted.isdigit() or int(column_inputted) < 0 or int(column_inputted) >= COLS:
+                print("\nInvalid input. Please enter a valid column number.")
+                continue
+
+        else:
+            game.print_board()
+            move, score = game.get_move_from_minmax(piece=game.current_player)
+            print(f"AI plays column {move} with score {score}")
+            column_inputted = move
+
         game.game_turn(int(column_inputted))
 
 
