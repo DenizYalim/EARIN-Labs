@@ -6,7 +6,7 @@ PLAYER_O = "O"
 ROWS = 6
 COLS = 7
 
-MINMAX_DEPTH = 5
+MINMAX_DEPTH = 6
 
 
 class ConnectFour:
