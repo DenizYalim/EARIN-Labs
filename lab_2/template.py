@@ -175,6 +175,11 @@ class ConnectFour:
                     best_score = score
                     best_col = col
 
+                if alpha < best_score:  # set new alpha
+                    alpha = best_score
+
+                if alpha >= beta:
+                    break
             return best_col, best_score
 
         else:
@@ -200,6 +205,12 @@ class ConnectFour:
                 if score < best_score:
                     best_score = score
                     best_col = col
+
+                if beta > best_score:  # set new beta
+                    beta = best_score
+
+                if alpha >= beta:
+                    break
 
             return best_col, best_score
 
