@@ -6,7 +6,7 @@ PLAYER_O = "O"
 ROWS = 6
 COLS = 7
 
-MINMAX_DEPTH = 4
+MINMAX_DEPTH = 5
 
 
 class ConnectFour:
@@ -95,9 +95,11 @@ class ConnectFour:
 
     def print_board(self):
         for row in self.board:
-            print("|".join(row))
-        print("-" * (COLS * 2 - 1))
-        print(" ".join(str(i) for i in range(COLS)))
+            print("#", end="")
+            print("|".join(row), end="")
+            print("#")
+        # print("#" + "-" * (COLS * 2 - 1) + "#")
+        print("#" + " ".join(str(i) for i in range(COLS)) + "#")
 
     def evaluate_position(self, board: list[list[str]], piece):
         opponent = self.__get_reverse_of_piece(piece)
