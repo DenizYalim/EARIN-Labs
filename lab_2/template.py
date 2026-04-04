@@ -126,6 +126,46 @@ class ConnectFour:
 
         """
 
+    def evaluate_position(self, board: list[list[str]], piece):
+        """
+        Evaluation of position
+        Parameters:
+        - board: 2d matrix representing evaluated state of the board
+        - piece: PLAYER_X or PLAYER_O depending on which player's position we evaluate
+
+        Returns:
+        - score of the position
+
+        """
+        # default states = already_won, already_tied, already_lost
+        if self._winning_move(board, piece):
+            return 1337
+        if self._winning_move(board, self.__get_reverse_of_piece(piece)):
+            return -1337
+
+        # pieces on the middle should be more valuable,
+        positional_score = 0
+        for row, list in enumerate(board):
+            for col, cell in enumerate(list):
+                piece_value = COLS // 2 - abs(COLS // 2 - col) + ROWS // 2 - abs(ROWS // 2 - row)  # pieces in the middle are more valuable
+                if cell == piece:  # our piece
+                    positional_score += piece_value
+                elif cell == self.__get_reverse_of_piece(piece):  # opponent piece
+                    positional_score -= piece_value
+                else:
+                    pass  # empty cell
+
+        return positional_score
+
+    def __get_reverse_of_piece(self, piece) -> str:
+        if piece == PLAYER_O:
+            return PLAYER_X
+
+        if piece == PLAYER_X:
+            return PLAYER_O
+
+        raise ValueError(f"Invalid piece {piece} given, expected {PLAYER_X} or {PLAYER_O}")
+
     def get_move_from_minmax(self, piece, og_board=None, depth=MINMAX_DEPTH) -> tuple:
         if og_board is None:
             og_board = self.board
@@ -152,35 +192,7 @@ class ConnectFour:
         move_list.sort(key=lambda x: x[1], reverse=True)
         return move_list[0]
 
-    def evaluate_position(self, board, piece):
-        """
-        Evaluation of position
-        Parameters:
-        - board: 2d matrix representing evaluated state of the board
-        - piece: PLAYER_X or PLAYER_O depending on which player's position we evaluate
-
-        Returns:
-        - score of the position
-
-        """
-        # default states = already_won, already_tied, already_lost
-        if self._winning_move(board, piece):
-            return 1337
-        if self._winning_move(board, self.__get_reverse_of_piece(piece)):
-            return -1337
-
-        return 0
-
-    def __get_reverse_of_piece(self, piece) -> str:
-        if piece == PLAYER_O:
-            return PLAYER_X
-
-        if piece == PLAYER_X:
-            return PLAYER_O
-
-        raise ValueError(f"Invalid piece {piece} given, expected {PLAYER_X} or {PLAYER_O}")
-
-    def minimax(self, board, depth, maximizing_player, alpha, beta):
+    def minimax(self, board, depth, maximizing_player, alpha, beta) -> tuple:  # value, column of best move
         """
         Minimax with alpha-beta pruning algorithm
 
@@ -205,6 +217,11 @@ def main():
     Main game loop implementation. Player1 should play first with 'X', player2 plays second with 'O'
     """
     game = ConnectFour()
+
+    player_preferences = input("Do you want to play as 'X' (goes first) or 'O' (goes second)? Enter X or O: ").strip().upper()
+    while player_preferences not in [PLAYER_X, PLAYER_O]:
+        print("Invalid input. Defaulting to 'X'.")
+        player_preferences = input("Do you want to play as 'X' (goes first) or 'O' (goes second)? Enter X or O: ").strip().upper()
 
     while True:
         game.print_board()
