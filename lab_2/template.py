@@ -25,7 +25,7 @@ class ConnectFour:
             print(f"Player {self.current_player} has already won!")
             return
 
-        if not self._place_piece(board=self.board, column=column, piece=self.current_player):
+        if not self._place_piece(board=self.board, column=column, piece=self.current_player)[0]:
             return  # invalid move, piece not placed
 
         someone_won = self._winning_move(self.board, self.current_player)
@@ -42,7 +42,7 @@ class ConnectFour:
 
         self.current_player = self.__get_reverse_of_piece(self.current_player)
 
-    def _place_piece(self, board, column, piece) -> bool:  # bool to show succesful placement
+    def _place_piece(self, board, column, piece) -> tuple:  # tuple of (success, piece)
         column = int(column)  # typecast str to int, it will crash if given string
 
         if column < 0 or column >= COLS:
@@ -56,16 +56,11 @@ class ConnectFour:
             if board[current_row][column] == EMPTY:
                 board[current_row][column] = piece
 
-                # switch player for next turn
-                """if self.current_player == PLAYER_X:
-                    self.current_player = PLAYER_O
-                else:
-                    self.current_player = PLAYER_X"""
-
                 return True, piece
             current_row -= 1
 
-        print("Column is full, try a different column.")
+        if board == self.board:  # don't print if its a simulation
+            print("Column is full, try a different column.")
         return False, None
 
     def _winning_move(self, board, piece):
@@ -111,7 +106,6 @@ class ConnectFour:
         return copy.deepcopy(board)
 
     def print_board(self):
-        print()
         for row in self.board:
             print("|".join(row))
         print("-" * (COLS * 2 - 1))
@@ -132,25 +126,31 @@ class ConnectFour:
 
         """
 
-    def get_move_from_minmax(self, piece, og_board=None, depth=MINMAX_DEPTH, alpha=0, beta=0) -> tuple:
+    def get_move_from_minmax(self, piece, og_board=None, depth=MINMAX_DEPTH) -> tuple:
         if og_board is None:
-            og_board = self.board  # since def args can't access object itself, this is the work around
+            og_board = self.board
 
         if depth == 0:
-            # might be a good idea to seperate this to two functions; as currently we have 2 different return outputs. this line should only be called internally.
-            return self.evaluate_position(og_board, piece)
+            return (-1, self.evaluate_position(og_board, piece))
 
-        move_list = []  # list of tuples: (move, score)
+        move_list = []
+
         for col in range(COLS):
             temp_board = self._copy_board(og_board)
-            self._place_piece(board=temp_board, column=col, piece=piece)
+            success, _ = self._place_piece(board=temp_board, column=col, piece=piece)
 
-            score = self.get_move_from_minmax(og_board=temp_board, piece=self.__get_reverse_of_piece(piece), depth=depth - 1, alpha=alpha, beta=beta)
+            if not success:
+                continue
+
+            _, score = self.get_move_from_minmax(piece=self.__get_reverse_of_piece(piece), og_board=temp_board, depth=depth - 1)
 
             move_list.append((col, score))
 
+        if not move_list:
+            return (-1, self.evaluate_position(og_board, piece))
+
         move_list.sort(key=lambda x: x[1], reverse=True)
-        return move_list[0]  # return column with best score"""
+        return move_list[0]
 
     def evaluate_position(self, board, piece):
         """
@@ -208,10 +208,13 @@ def main():
 
     while True:
         game.print_board()
-        minmax_eval = game.get_move_from_minmax(piece=game.current_player)[0]
+        minmax_eval = game.get_move_from_minmax(piece=game.current_player)
         print(f"output: {minmax_eval}")
-        column_inputted = input(f"where to place piece? (0-6); optimal minmax move to play: {minmax_eval[0]} with score: {minmax_eval[1]}  \n")
-        game.game_turn(column_inputted)
+        column_inputted = input(f"where to place piece? (0-{COLS - 1}); optimal minmax move to play: {minmax_eval[0]} with score: {minmax_eval[1]}  \n")
+        if not column_inputted.isdigit() or int(column_inputted) < 0 or int(column_inputted) >= COLS:
+            print("\nInvalid input. Please enter a valid column number.")
+            continue
+        game.game_turn(int(column_inputted))
 
 
 if __name__ == "__main__":
