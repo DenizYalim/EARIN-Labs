@@ -2,41 +2,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
-
 def min_max_norm(val, min_val, max_val, new_min, new_max):
     return (val - min_val) * (new_max - new_min) / (max_val - min_val) + new_min
 
-
 class Chromosome:
-
-    def __init__(self, length, array: list = None):  # if array is None, initialize with a random binary vector
+    def __init__(self, length, array: list = None):  
         if array is None:
             array = np.random.randint(2, size=length)
-
         self.genes = array
         self.length = length
 
     def decode(self, lower_bound, upper_bound, aoi):
-        # Decode the chromosome segment from bit lower_bound to bit upper_bound into a real number within range aoi. You may use the provided min_max_norm helper.
         segment = self.genes[lower_bound:upper_bound]
         int_val = 0
-        for i, j in enumerate(segment):  # LITTLE OR BIG ENDIAN ?
+        for i, j in enumerate(segment):  
             int_val += j * 2**i
-
         k = upper_bound - lower_bound
         max_val = 2**k - 1
-
         decoded = min_max_norm(int_val, 0, max_val, aoi[0], aoi[1])
         return decoded
 
-    def mutation(self, probability):  # flip each bit with the given probability
+    def mutation(self, probability):  
         for i, bit in enumerate(self.genes):
-            rando = random.randint(0, 10)
-            if rando < probability * 10:  # hit
+            if random.random() < probability:  
                 self.genes[i] = 1 - bit
-        pass
 
-    def crossover(self, other):  # Perform one-point crossover with another chromosome. Return two offspring.
+    def crossover(self, other):  
         genes1 = self.genes
         genes2 = other.genes
         point = random.randint(1, self.length - 1)
@@ -44,12 +35,10 @@ class Chromosome:
         new_genes2 = np.concatenate((genes2[:point], genes1[point:]))
         return Chromosome(self.length, new_genes1), Chromosome(self.length, new_genes2)
 
-
 def objective_function(*args):
-    # f ( x 1 , x 2 ) = 20 + x 1 2 − 10 cos ⁡ ( 2 π x 1 ) + x 2 2 − 10 cos ⁡ ( 2 π x 2 )
+    """Himmelblau's function for Group B."""
     x1, x2 = args
-    return 20 + x1**2 - 10 * np.cos(2 * np.pi * x1) + x2**2 - 10 * np.cos(2 * np.pi * x2)
-
+    return (x1**2 + x2 - 11)**2 + (x1 + x2**2 - 7)**2
 
 class GeneticAlgorithm:
     def __init__(
@@ -75,33 +64,89 @@ class GeneticAlgorithm:
         self.population_size = population_size
         self.crossover_probability = crossover_probability
         self.num_steps = num_steps
+        
+        self.population = [Chromosome(self.chromosome_length) for _ in range(self.population_size)]
 
     def eval_objective_func(self, chromosome):
-        pass
+        args = []
+        for i in range(self.obj_func_num_args):
+            low = i * self.bits_per_arg
+            high = (i + 1) * self.bits_per_arg
+            args.append(chromosome.decode(low, high, self.aoi))
+        return self.objective_function(*args)
 
     def tournament_selection(self):
-        pass
+        selected_parents = []
+        for _ in range(self.population_size):
+            candidates = random.sample(self.population, self.tournament_size)
+            winner = min(candidates, key=lambda c: self.eval_objective_func(c))
+            selected_parents.append(winner)
+        return selected_parents
 
     def reproduce(self, parents):
-        pass
+        new_pop = []
+        for i in range(0, self.population_size, 2):
+            p1, p2 = parents[i], parents[i+1]
+            if random.random() < self.crossover_probability:
+                c1, c2 = p1.crossover(p2)
+            else:
+                c1, c2 = Chromosome(self.chromosome_length, p1.genes.copy()), Chromosome(self.chromosome_length, p2.genes.copy())
+            
+            c1.mutation(self.mutation_probability)
+            c2.mutation(self.mutation_probability)
+            new_pop.extend([c1, c2])
+        return new_pop
 
     def plot_func(self, trace):
-        pass
+
+        trace = np.array(trace)
+        x = np.linspace(self.aoi[0], self.aoi[1], 100)
+        y = np.linspace(self.aoi[0], self.aoi[1], 100)
+        X, Y = np.meshgrid(x, y)
+        Z = self.objective_function(X, Y)
+
+        plt.figure(figsize=(10, 8))
+        plt.contour(X, Y, Z, levels=50, cmap='viridis')
+        
+        colors = plt.cm.Reds(np.linspace(0.4, 1.0, len(trace)))
+        plt.scatter(trace[:, 0], trace[:, 1], c=colors, edgecolor='black', s=50)
+        
+        plt.title("Himmelblau's Function Optimization Trace")
+        plt.xlabel("x1")
+        plt.ylabel("x2")
+        plt.show()
 
     def run(self):
-        pass
 
+        trace = []
+        for _ in range(self.num_steps):
+            best_ind = min(self.population, key=lambda c: self.eval_objective_func(c))
+            
+            best_x1 = best_ind.decode(0, self.bits_per_arg, self.aoi)
+            best_x2 = best_ind.decode(self.bits_per_arg, self.chromosome_length, self.aoi)
+            best_val = self.eval_objective_func(best_ind)
+            
+            trace.append((best_x1, best_x2, best_val))
+            
+            parents = self.tournament_selection()
+            self.population = self.reproduce(parents)
+        return trace
 
-# TODO: fill in the parameters for your group and uncomment to run
-# ga = GeneticAlgorithm(
-#     chromosome_length=...,
-#     obj_func_num_args=2,
-#     objective_function=objective_function,
-#     aoi=[...],
-#     population_size=...,
-#     tournament_size=2,
-#     mutation_probability=0.05,
-#     crossover_probability=0.8,
-#     num_steps=...
-# )
-# ga.run()
+if __name__ == "__main__":
+    ga = GeneticAlgorithm(
+        chromosome_length=40,
+        obj_func_num_args=2,
+        objective_function=objective_function,
+        aoi=[-5, 5],
+        population_size=100,
+        tournament_size=3,
+        mutation_probability=0.05,
+        crossover_probability=0.8,
+        num_steps=50
+    )
+
+    history = ga.run()
+    ga.plot_func(history)
+    
+    best = history[-1]
+    print(f"Final Minimum: x1={best[0]:.4f}, x2={best[1]:.4f}, Value={best[2]:.6f}")
