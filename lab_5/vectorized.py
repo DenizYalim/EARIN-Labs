@@ -38,15 +38,23 @@ class FullyConnected(Layer):
         super().__init__()
         self.input_size = input_size
         self.output_size = output_size
-
-        self.weights = np.random.randn(input_size, output_size) * 0.01
-        self.bias = np.zeros(output_size)
+        self.weights = np.random.rand(input_size, output_size) * 0.01
+        self.bias = np.zeros((1, output_size))
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        self.input_cached = x
-        self.output = np.dot(x, self.weights) + self.bias
+        self.output = np.zeros(self.output_size)
+        self.input_cached = x  # caching for bacward pass
+
+        """for i in range(self.output_size): # very slow
+            self.output[i] = self.bias[0][i]
+
+            for j in range(x.shape[0]):
+                self.output[i] += x[j] * self.weights[j][i]"""
+        self.output = np.dot(x, self.weights) + self.bias  # faster with numpy implementation; np.dot means dot multip over matrices
+
         return self.output
 
+    # Compute gradients for W and b, update parameters, return gradient for the previous layer.
     def backward(self, output_error_derivative) -> np.ndarray:
         input_error_derivative = np.dot(output_error_derivative, self.weights.T)
 
@@ -194,6 +202,8 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
     print("Loading Fashion-MNIST dataset...")
     dataset = fetch_openml("Fashion-MNIST", version=1, as_frame=False)
 
@@ -203,46 +213,98 @@ if __name__ == "__main__":
 
     X_train, X_test, y_train, y_test = train_test_split(X, y_onehot, test_size=0.2, random_state=0)
 
-    # Optional: Minibatching, explained in the source given; gives faster; Stochastic Gradient Descent
+    # Smaller subset because custom ANN implementation can be slow
     X_train = X_train[:5000]
     y_train = y_train[:5000]
     X_test = X_test[:1000]
     y_test = y_test[:1000]
 
-    print("Creating network...")
+    activations = {
+        "Tanh": Tanh,
+        "Sigmoid": Sigmoid,
+        "ReLU": ReLU,
+        "Leaky ReLU": LeakyReLU,
+    }
 
-    network = Network(layers=[FullyConnected(input_size=784, output_size=128), ReLU(), FullyConnected(input_size=128, output_size=10)], learning_rate=0.01)
+    loss_histories = {}
+    accuracies = {}
 
     loss_obj = Loss(mse_loss, mse_loss_derivative)
 
-    network.compile(loss_obj)
+    for activation_name, ActivationClass in activations.items():
+        print(f"\nTraining ANN with {activation_name} activation...")
 
-    print("Training started...")
-    timer = Timer("Training timer")
-    timer()
-    losses = network.fit(X_train, y_train, epochs=5, learning_rate=0.01, verbose=1)
+        # Same seed for fair comparison
+        np.random.seed(1)
 
-    print("Training finished.")
-    timer()
-    print("Loss history:", losses)
+        network = Network(
+            layers=[
+                FullyConnected(input_size=784, output_size=64),
+                ActivationClass(),
+                FullyConnected(input_size=64, output_size=10),
+            ],
+            learning_rate=0.01,
+        )
 
-    print("Testing started...")
+        network.compile(loss_obj)
 
-    correct = 0
-    # testing
-    for i in range(X_test.shape[0]):
-        x = X_test[i]
-        y_true = y_test[i]
+        losses = network.fit(
+            X_train,
+            y_train,
+            epochs=5,
+            learning_rate=0.01,
+            verbose=1,
+        )
 
-        y_pred = network(x)
+        loss_histories[activation_name] = losses
 
-        predicted_class = np.argmax(y_pred)
-        true_class = np.argmax(y_true)
+        correct = 0
 
-        if predicted_class == true_class:
-            correct += 1
+        for i in range(X_test.shape[0]):
+            x = X_test[i]
+            y_true = y_test[i]
 
-    accuracy = correct / X_test.shape[0]
+            y_pred = network(x)
 
-    print("Testing finished.")
-    print("Test accuracy:", accuracy)
+            predicted_class = np.argmax(y_pred)
+            true_class = np.argmax(y_true)
+
+            if predicted_class == true_class:
+                correct += 1
+
+        accuracy = correct / X_test.shape[0]
+        accuracies[activation_name] = accuracy
+
+        print(f"{activation_name} test accuracy: {accuracy}")
+
+    print("\nFinal accuracies:")
+    for activation_name, accuracy in accuracies.items():
+        print(f"{activation_name}: {accuracy}")
+
+    plt.figure(figsize=(10, 6))
+
+    styles = {
+        "Tanh": {"marker": "o", "linestyle": "-"},
+        "Sigmoid": {"marker": "s", "linestyle": "-"},
+        "ReLU": {"marker": "^", "linestyle": "--"},
+        "Leaky ReLU": {"marker": "x", "linestyle": ":"},
+    }
+
+    for activation_name, losses in loss_histories.items():
+        plt.plot(
+            range(1, len(losses) + 1),
+            losses,
+            label=activation_name,
+            marker=styles[activation_name]["marker"],
+            linestyle=styles[activation_name]["linestyle"],
+            linewidth=2,
+            markersize=8,
+        )
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Combined Loss Curve of ANNs with Different Activation Functions")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig("combined_loss_curve.png", dpi=300)
+    plt.show()

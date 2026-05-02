@@ -203,7 +203,7 @@ from sklearn.model_selection import train_test_split
 
 if __name__ == "__main__":
     print("Loading Fashion-MNIST dataset...")
-    dataset = fetch_openml("Fashion-MNIST", version=1, as_frame=False)
+    dataset = fetch_openml("mnist_784", version=1, as_frame=False)
 
     X = dataset.data / 255.0
     y = dataset.target.astype(int)
@@ -219,7 +219,10 @@ if __name__ == "__main__":
 
     print("Creating network object")
 
-    network = Network(layers=[FullyConnected(input_size=784, output_size=128), LeakyReLU(), FullyConnected(input_size=128, output_size=10)], learning_rate=0.01)
+    network = Network(
+        layers=[FullyConnected(input_size=784, output_size=64), ReLU(), FullyConnected(input_size=64, output_size=10)],
+        learning_rate=0.01,
+    )
 
     loss_obj = Loss(mse_loss, mse_loss_derivative)
 
