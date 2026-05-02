@@ -38,23 +38,15 @@ class FullyConnected(Layer):
         super().__init__()
         self.input_size = input_size
         self.output_size = output_size
-        self.weights = np.random.rand(input_size, output_size) * 0.01
-        self.bias = np.zeros((1, output_size))
+
+        self.weights = np.random.randn(input_size, output_size) * 0.01
+        self.bias = np.zeros(output_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        self.output = np.zeros(self.output_size)
-        self.input_cached = x  # caching for bacward pass
-
-        """for i in range(self.output_size): # very slow
-            self.output[i] = self.bias[0][i]
-
-            for j in range(x.shape[0]):
-                self.output[i] += x[j] * self.weights[j][i]"""
-        self.output = np.dot(x, self.weights) + self.bias  # faster with numpy implementation; np.dot means dot multip over matrices
-
+        self.input_cached = x
+        self.output = np.dot(x, self.weights) + self.bias
         return self.output
 
-    # Compute gradients for W and b, update parameters, return gradient for the previous layer.
     def backward(self, output_error_derivative) -> np.ndarray:
         input_error_derivative = np.dot(output_error_derivative, self.weights.T)
 
@@ -217,9 +209,9 @@ if __name__ == "__main__":
     X_test = X_test[:1000]
     y_test = y_test[:1000]
 
-    print("Creating network object")
+    print("Creating network...")
 
-    network = Network(layers=[FullyConnected(input_size=784, output_size=128), LeakyReLU(), FullyConnected(input_size=128, output_size=10)], learning_rate=0.01)
+    network = Network(layers=[FullyConnected(input_size=784, output_size=128), ReLU(), FullyConnected(input_size=128, output_size=10)], learning_rate=0.01)
 
     loss_obj = Loss(mse_loss, mse_loss_derivative)
 
