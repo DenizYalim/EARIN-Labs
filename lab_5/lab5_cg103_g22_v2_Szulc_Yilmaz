@@ -58,7 +58,7 @@ class FullyConnected(Layer):
     def backward(self, output_error_derivative) -> np.ndarray:
         input_error_derivative = np.dot(output_error_derivative, self.weights.T)
 
-        weights_gradient = np.outer(self.input_cached, output_error_derivative)
+        weights_gradient = np.outer(self.input_cached, output_error_derivative)  # [0.1333, -0.2, 0.0667]
         bias_gradient = output_error_derivative
 
         self.weights -= self.learning_rate * weights_gradient
@@ -161,14 +161,13 @@ class Network:
 
         epoch_losses = []
 
-        for epoch in range(epochs):
+        for _ in range(epochs):
             total_loss = 0.0
 
             for i in range(x_train.shape[0]):
                 x = x_train[i]
                 y_true = y_train[i]
 
-                # Forward pass
                 y_pred = self(x)
 
                 # Calculate loss
@@ -211,7 +210,7 @@ if __name__ == "__main__":
 
     X_train, X_test, y_train, y_test = train_test_split(X, y_onehot, test_size=0.2, random_state=0)
 
-    # Optional: Minibatching, explained in the source given; gives faster; Stochastic Gradient Descent
+    # Minibatching, explained in the source given; gives faster; Stochastic Gradient Descent
     X_train = X_train[:5000]
     y_train = y_train[:5000]
     X_test = X_test[:1000]
