@@ -19,7 +19,11 @@ num_actions = env.action_space.n
 
 
 ### PARAMETERS
-alpha = 0.1
+alpha_start = 0.1
+alpha = alpha_start
+alpha_decay = 0.99995
+alpha_min = 0.01
+
 gamma = 0.99
 
 epsilon = 1.0  # how randomly action is taken at first
@@ -28,7 +32,7 @@ epsilon_min = 0.05  # we always wwant some randomness
 
 episodes = 20000  # epoch count
 
-naming_convention = f"_alpha{alpha}_gamma{gamma}_epsilon{epsilon}_decay{epsilon_decay},_episodes{episodes}"
+naming_convention = f"_alpha{alpha_start}_alphaDecay{alpha_decay}_alphaMin{alpha_min}" f"_gamma{gamma}_epsilon{epsilon}_decay{epsilon_decay}_episodes{episodes}"
 q_table_filename = f"q_table{naming_convention}.npy"
 
 try:
@@ -41,6 +45,7 @@ except FileNotFoundError:
 rewards_per_episode = []
 steps_per_episode = []
 successes_per_episode = []
+alphas_per_episode = []
 
 
 def discretize_state(state):
@@ -74,9 +79,11 @@ def moving_average(values, window_size):
 
 
 max_reward = -float("inf")  # interchangable with min_step_count
+
 if __name__ == "__main__":
     timer = Timer("MountainCar Q-Learning")
     timer()
+
     for episode in range(episodes):
         state, info = env.reset()
         discrete_state = discretize_state(state)
@@ -102,6 +109,7 @@ if __name__ == "__main__":
             discrete_state = next_discrete_state
 
         epsilon = max(epsilon_min, epsilon * epsilon_decay)
+        alpha = max(alpha_min, alpha * alpha_decay)
 
         if total_reward > max_reward:
             max_reward = total_reward
@@ -110,12 +118,15 @@ if __name__ == "__main__":
         rewards_per_episode.append(total_reward)
         steps_per_episode.append(steps)
         successes_per_episode.append(1 if terminated else 0)
+        alphas_per_episode.append(alpha)
 
         if episode % 3000 == 0:
-            print("episode:", episode, "total_reward:", total_reward, "steps:", steps, "epsilon:", round(epsilon, 4))
+            print("episode:", episode, "total_reward:", total_reward, "steps:", steps, "epsilon:", round(epsilon, 4), "alpha:", round(alpha, 4))
 
     np.save(q_table_filename, q_table)
+
     timer()  # stop timer and print elapsed time
+
     window_size = 100
 
     plt.plot(moving_average(rewards_per_episode, window_size))
@@ -132,6 +143,13 @@ if __name__ == "__main__":
     plt.savefig(f"success_rate{naming_convention}.png")
     plt.show()
 
+    plt.plot(alphas_per_episode)
+    plt.xlabel("Episode")
+    plt.ylabel("Alpha")
+    plt.title("Learning Rate Decay")
+    plt.savefig(f"alpha_decay{naming_convention}.png")
+    plt.show()
+
     env.close()
 
-    print(f"lowest time: f{max_reward}")
+    print(f"lowest time: {max_reward}")
