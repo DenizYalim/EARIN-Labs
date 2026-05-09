@@ -17,12 +17,8 @@ state_low = env.observation_space.low
 state_high = env.observation_space.high
 num_actions = env.action_space.n
 
-try:
-    q_table = np.load("q_table.npy")
-    print("Q-table loaded from file.")
-except FileNotFoundError:
-    q_table = np.zeros((*num_bins, num_actions))
 
+### PARAMETERS
 alpha = 0.1
 gamma = 0.99
 
@@ -31,6 +27,16 @@ epsilon_decay = 0.995
 epsilon_min = 0.05  # we always wwant some randomness
 
 episodes = 20000  # epoch count
+
+naming_convention = f"_alpha{alpha}_gamma{gamma}_epsilon{epsilon}_decay{epsilon_decay},_episodes{episodes}"
+q_table_filename = f"q_table{naming_convention}.npy"
+
+try:
+    q_table = np.load(q_table_filename)
+    print("Q-table loaded from file.")
+except FileNotFoundError:
+    q_table = np.zeros((*num_bins, num_actions))
+
 
 rewards_per_episode = []
 steps_per_episode = []
@@ -105,10 +111,10 @@ if __name__ == "__main__":
         steps_per_episode.append(steps)
         successes_per_episode.append(1 if terminated else 0)
 
-        if episode % 300 == 0:
+        if episode % 3000 == 0:
             print("episode:", episode, "total_reward:", total_reward, "steps:", steps, "epsilon:", round(epsilon, 4))
 
-    np.save("q_table.npy", q_table)
+    np.save(q_table_filename, q_table)
     timer()  # stop timer and print elapsed time
     window_size = 100
 
@@ -116,14 +122,14 @@ if __name__ == "__main__":
     plt.xlabel("Episode")
     plt.ylabel("Average reward")
     plt.title("MountainCar Q-Learning Training Progress")
-    plt.savefig("training_rewards.png")
+    plt.savefig(f"training_rewards{naming_convention}.png")
     plt.show()
 
     plt.plot(moving_average(successes_per_episode, window_size))
     plt.xlabel("Episode")
     plt.ylabel("Success rate")
-    plt.title("MountainCar Success Rate")
-    plt.savefig("success_rate.png")
+    plt.title("MountainCar Training Success Rate")
+    plt.savefig(f"success_rate{naming_convention}.png")
     plt.show()
 
     env.close()
