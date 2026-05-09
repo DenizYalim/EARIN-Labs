@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 from typing import List
 import numpy as np
-from utility import Timer
+from lab_6.utility import Timer
 
 # source for backpropagation: https://www.youtube.com/watch?v=Ilg3gGewQ5U
 

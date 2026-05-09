@@ -8,6 +8,7 @@
 import gymnasium as gym
 import numpy as np
 import matplotlib.pyplot as plt
+from utility import Timer
 
 env = gym.make("MountainCar-v0")
 
@@ -19,23 +20,31 @@ num_actions = env.action_space.n
 
 ### PARAMETERS
 use_alpha_decay = True
-
 alpha_start = 0.1
 alpha = alpha_start
 alpha_decay = 0.99995
-alpha_min = 0.01
+alpha_min = 0.001
 
-gamma = 0.99
+gamma = 0.95
 
-epsilon = 1.0  # how randomly action is taken at first
-epsilon_decay = 0.995
-epsilon_min = 0.05  # we always wwant some randomness
+epsilon = 1.0
+epsilon_decay = 0.9995
+epsilon_min = 0.01
 
-episodes = 40000  # epoch count
+episodes = 40000
+
 
 naming_convention = (
-    f"_alpha{alpha_start}_useAlphaDecay{use_alpha_decay}" f"_alphaDecay{alpha_decay}_alphaMin{alpha_min}" f"_gamma{gamma}_epsilon{epsilon}_decay{epsilon_decay}_episodes{episodes}"
+    f"_alpha{alpha_start}"
+    f"_useAlphaDecay{use_alpha_decay}"
+    f"_alphaDecay{alpha_decay}"
+    f"_alphaMin{alpha_min}"
+    f"_gamma{gamma}"
+    f"_epsilon{epsilon}"
+    f"_decay{epsilon_decay}"
+    f"_episodes{episodes}"
 )
+
 q_table_filename = f"q_table{naming_convention}.npy"
 
 try:
