@@ -14,3 +14,10 @@ class Timer:
             elapsed = time.perf_counter() - self.start_time
             print(f"{self.timer_name} finished in {elapsed:.4f} seconds.")
             self.start_time = None
+
+    def lapse(self) -> float:
+        if self.start_time is None:
+            raise ValueError("Timer has not been started.")
+        elapsed = time.perf_counter() - self.start_time
+        print(f"{self.timer_name} elapsed time: {elapsed:.4f} seconds.")
+        return elapsed

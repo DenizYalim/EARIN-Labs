@@ -30,7 +30,7 @@ epsilon = 1.0  # how randomly action is taken at first
 epsilon_decay = 0.995
 epsilon_min = 0.05  # we always wwant some randomness
 
-episodes = 5000  # epoch count
+episodes = 20000  # epoch count
 
 rewards_per_episode = []
 steps_per_episode = []
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         steps_per_episode.append(steps)
         successes_per_episode.append(1 if terminated else 0)
 
-        if episode % 100 == 0:
+        if episode % 300 == 0:
             print("episode:", episode, "total_reward:", total_reward, "steps:", steps, "epsilon:", round(epsilon, 4))
 
     np.save("q_table.npy", q_table)
@@ -127,3 +127,5 @@ if __name__ == "__main__":
     plt.show()
 
     env.close()
+
+    print(f"lowest time: f{max_reward}")
