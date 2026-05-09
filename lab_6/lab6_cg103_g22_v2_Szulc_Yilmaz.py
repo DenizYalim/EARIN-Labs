@@ -4,8 +4,7 @@
 # STATE SPACE: SPEED : POSITION
 # terminated: position >= 0.5 # reached a hill
 # truncated: hit 200 step limit
-# alpha: learning rate gamma: caring about future rewards
-from utility import Timer
+# alpha: learning rate gamma: caring about future rewardsfrom utility import Timer
 import gymnasium as gym
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,6 +18,8 @@ num_actions = env.action_space.n
 
 
 ### PARAMETERS
+use_alpha_decay = True
+
 alpha_start = 0.1
 alpha = alpha_start
 alpha_decay = 0.99995
@@ -30,9 +31,11 @@ epsilon = 1.0  # how randomly action is taken at first
 epsilon_decay = 0.995
 epsilon_min = 0.05  # we always wwant some randomness
 
-episodes = 20000  # epoch count
+episodes = 40000  # epoch count
 
-naming_convention = f"_alpha{alpha_start}_alphaDecay{alpha_decay}_alphaMin{alpha_min}" f"_gamma{gamma}_epsilon{epsilon}_decay{epsilon_decay}_episodes{episodes}"
+naming_convention = (
+    f"_alpha{alpha_start}_useAlphaDecay{use_alpha_decay}" f"_alphaDecay{alpha_decay}_alphaMin{alpha_min}" f"_gamma{gamma}_epsilon{epsilon}_decay{epsilon_decay}_episodes{episodes}"
+)
 q_table_filename = f"q_table{naming_convention}.npy"
 
 try:
@@ -109,7 +112,9 @@ if __name__ == "__main__":
             discrete_state = next_discrete_state
 
         epsilon = max(epsilon_min, epsilon * epsilon_decay)
-        alpha = max(alpha_min, alpha * alpha_decay)
+
+        if use_alpha_decay:
+            alpha = max(alpha_min, alpha * alpha_decay)
 
         if total_reward > max_reward:
             max_reward = total_reward
@@ -146,7 +151,7 @@ if __name__ == "__main__":
     plt.plot(alphas_per_episode)
     plt.xlabel("Episode")
     plt.ylabel("Alpha")
-    plt.title("Learning Rate Decay")
+    plt.title("Learning Rate Decay" if use_alpha_decay else "Learning Rate")
     plt.savefig(f"alpha_decay{naming_convention}.png")
     plt.show()
 
