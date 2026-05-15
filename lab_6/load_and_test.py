@@ -10,7 +10,7 @@ Q_TABLE_FILES = [
 ]
 
 TEST_EPISODES = 10000
-SEED = 42
+SEED = 33
 
 
 def ai_bot(velocity, position):

@@ -20,14 +20,14 @@ num_actions = env.action_space.n
 
 ### PARAMETERS
 use_alpha_decay = True
-alpha_start = 0.1
+alpha_start = 0.1  # learning rate
 alpha = alpha_start
 alpha_decay = 0.99995
 alpha_min = 0.001
 
-gamma = 0.95
+gamma = 0.95  # future outcome
 
-epsilon = 1.0
+epsilon = 1.0  # exploration rate
 epsilon_decay = 0.9995
 epsilon_min = 0.01
 
